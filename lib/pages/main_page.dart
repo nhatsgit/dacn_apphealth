@@ -18,7 +18,7 @@ class MainPage extends StatelessWidget {
                 color: const Color(0xFF4CAF50),
               ),
               child: Text(
-                'Tùy chọn',
+                'Tài Khoản:Nguyễn Anh Nhật',
                 style: TextStyle(color: Colors.white, fontSize: 20),
               ),
             ),
@@ -60,6 +60,36 @@ class MainPage extends StatelessWidget {
             Obx(() => ListTile(
                   leading: const Icon(Icons.bedtime_outlined),
                   title: const Text('Giấc Ngủ'),
+                  selected: controller.selectedIndex.value == 3,
+                  onTap: () {
+                    controller.updateIndex(3);
+                    Navigator.pop(context);
+                  },
+                )),
+            // 💤 Giấc ngủ
+            Obx(() => ListTile(
+                  leading: const Icon(Icons.fitness_center),
+                  title: const Text('Thể dục'),
+                  selected: controller.selectedIndex.value == 3,
+                  onTap: () {
+                    controller.updateIndex(3);
+                    Navigator.pop(context);
+                  },
+                )),
+            // 💤 Giấc ngủ
+            Obx(() => ListTile(
+                  leading: const Icon(Icons.local_dining),
+                  title: const Text('Bữa Ăn'),
+                  selected: controller.selectedIndex.value == 3,
+                  onTap: () {
+                    controller.updateIndex(3);
+                    Navigator.pop(context);
+                  },
+                )),
+            // 💤 Giấc ngủ
+            Obx(() => ListTile(
+                  leading: const Icon(Icons.medication),
+                  title: const Text('Uống Thuốc'),
                   selected: controller.selectedIndex.value == 3,
                   onTap: () {
                     controller.updateIndex(3);

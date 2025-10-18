@@ -68,7 +68,7 @@ class OverviewPage extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Icon(Icons.refresh, color: Colors.white),
+                Icon(Icons.arrow_forward_ios, color: Colors.white),
               ],
             ),
           ),

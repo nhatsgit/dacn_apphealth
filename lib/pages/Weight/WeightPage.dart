@@ -1,3 +1,4 @@
+import 'package:dacn_app/pages/Weight/AddWeightPage.dart';
 import 'package:flutter/material.dart';
 
 class WeightPage extends StatelessWidget {
@@ -110,7 +111,13 @@ class WeightPage extends StatelessWidget {
       // ➕ Nút thêm
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.green,
-        onPressed: () {},
+        onPressed: () {
+          // 👉 Khi bấm, chuyển sang màn hình AddWeightPage
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddWeightPage()),
+          );
+        },
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
