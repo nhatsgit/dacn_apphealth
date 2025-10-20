@@ -70,9 +70,9 @@ class MainPage extends StatelessWidget {
             Obx(() => ListTile(
                   leading: const Icon(Icons.fitness_center),
                   title: const Text('Thể dục'),
-                  selected: controller.selectedIndex.value == 3,
+                  selected: controller.selectedIndex.value == 6,
                   onTap: () {
-                    controller.updateIndex(3);
+                    controller.updateIndex(6);
                     Navigator.pop(context);
                   },
                 )),
@@ -86,13 +86,22 @@ class MainPage extends StatelessWidget {
                     Navigator.pop(context);
                   },
                 )),
-            // 💤 Giấc ngủ
+
+            Obx(() => ListTile(
+                  leading: const Icon(Icons.notes_sharp),
+                  title: const Text('Hàng ngày'),
+                  selected: controller.selectedIndex.value == 4,
+                  onTap: () {
+                    controller.updateIndex(4);
+                    Navigator.pop(context);
+                  },
+                )),
             Obx(() => ListTile(
                   leading: const Icon(Icons.medication),
-                  title: const Text('Uống Thuốc'),
-                  selected: controller.selectedIndex.value == 3,
+                  title: const Text('Uống thuốc'),
+                  selected: controller.selectedIndex.value == 5,
                   onTap: () {
-                    controller.updateIndex(3);
+                    controller.updateIndex(5);
                     Navigator.pop(context);
                   },
                 )),

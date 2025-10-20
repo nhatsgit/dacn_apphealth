@@ -1,13 +1,24 @@
+import 'package:dacn_app/pages/Diary/DiaryPage.dart';
+import 'package:dacn_app/pages/Medication/MedicationPage.dart';
 import 'package:dacn_app/pages/Overview/OverviewPage.dart';
 import 'package:dacn_app/pages/Sleep/SleepPage.dart';
 import 'package:dacn_app/pages/Water/WaterPage.dart';
 import 'package:dacn_app/pages/Weight/WeightPage.dart';
+import 'package:dacn_app/pages/Workout/WorkoutPage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class MainPageController extends GetxController {
   var selectedIndex = 0.obs;
-  final List<Widget?> pages = [OverviewPage(), null, null, null];
+  final List<Widget?> pages = [
+    OverviewPage(),
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ];
 
   void updateIndex(int index) {
     selectedIndex.value = index;
@@ -24,6 +35,12 @@ class MainPageController extends GetxController {
         return WaterPage();
       case 3:
         return SleepPage();
+      case 4:
+        return DiaryPage();
+      case 5:
+        return MedicationPage();
+      case 6:
+        return WorkoutPage();
       default:
         return OverviewPage();
     }
