@@ -80,9 +80,9 @@ class MainPage extends StatelessWidget {
             Obx(() => ListTile(
                   leading: const Icon(Icons.local_dining),
                   title: const Text('Bữa Ăn'),
-                  selected: controller.selectedIndex.value == 3,
+                  selected: controller.selectedIndex.value == 7,
                   onTap: () {
-                    controller.updateIndex(3);
+                    controller.updateIndex(7);
                     Navigator.pop(context);
                   },
                 )),

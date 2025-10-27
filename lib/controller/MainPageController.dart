@@ -1,4 +1,5 @@
 import 'package:dacn_app/pages/Diary/DiaryPage.dart';
+import 'package:dacn_app/pages/Meal/MealPage.dart';
 import 'package:dacn_app/pages/Medication/MedicationPage.dart';
 import 'package:dacn_app/pages/Overview/OverviewPage.dart';
 import 'package:dacn_app/pages/Sleep/SleepPage.dart';
@@ -17,7 +18,8 @@ class MainPageController extends GetxController {
     null,
     null,
     null,
-    null
+    null,
+    null,
   ];
 
   void updateIndex(int index) {
@@ -41,6 +43,8 @@ class MainPageController extends GetxController {
         return MedicationPage();
       case 6:
         return WorkoutPage();
+      case 7:
+        return ListFoodPage();
       default:
         return OverviewPage();
     }
