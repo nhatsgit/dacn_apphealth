@@ -18,7 +18,7 @@ class MainPage extends StatelessWidget {
                 color: const Color(0xFF4CAF50),
               ),
               child: Text(
-                'Tài Khoản:Nguyễn Anh Nhật',
+                'Tài Khoản:Nguyễn Văn Test',
                 style: TextStyle(color: Colors.white, fontSize: 20),
               ),
             ),
