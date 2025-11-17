@@ -13,15 +13,70 @@ class MainPage extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50),
-              ),
-              child: Text(
-                'Tài Khoản:Nguyễn Văn Test',
-                style: TextStyle(color: Colors.white, fontSize: 20),
-              ),
-            ),
+            // CẬP NHẬT: DrawerHeader sử dụng dữ liệu động
+            Obx(() {
+              final profile = controller.userProfile.value; //
+              final isLoading = controller.isLoadingProfile.value;
+
+              Widget headerContent;
+              if (isLoading) {
+                // Hiển thị loading
+                headerContent = const Center(
+                  child: SizedBox(
+                    width: 30,
+                    height: 30,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                );
+              } else if (profile != null) {
+                // Hiển thị thông tin hồ sơ
+                headerContent = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Tài Khoản: ${profile.fullName}', //
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Giới tính: ${profile.gender ?? 'N/A'}', //
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                    Text(
+                      'Chiều cao: ${profile.height != null ? '${profile.height!.toStringAsFixed(0)} cm' : 'N/A'}', //
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                    Text(
+                      'BMI: ${profile.bmi != null ? profile.bmi!.toStringAsFixed(1) : 'N/A'}', //
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                  ],
+                );
+              } else {
+                // Thông báo lỗi/không có dữ liệu
+                headerContent = const Text(
+                  'Tài Khoản: Không thể tải hồ sơ',
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                );
+              }
+
+              return DrawerHeader(
+                decoration: const BoxDecoration(
+                  color: Color(0xFF4CAF50),
+                ),
+                child: headerContent,
+              );
+            }),
 
             // 🏠 Tổng quan
             Obx(() => ListTile(
@@ -66,7 +121,7 @@ class MainPage extends StatelessWidget {
                     Navigator.pop(context);
                   },
                 )),
-            // 💤 Giấc ngủ
+            // 🏋️ Thể dục
             Obx(() => ListTile(
                   leading: const Icon(Icons.fitness_center),
                   title: const Text('Thể dục'),
@@ -76,7 +131,7 @@ class MainPage extends StatelessWidget {
                     Navigator.pop(context);
                   },
                 )),
-            // 💤 Giấc ngủ
+            // 🍽️ Bữa Ăn
             Obx(() => ListTile(
                   leading: const Icon(Icons.local_dining),
                   title: const Text('Bữa Ăn'),
@@ -87,6 +142,7 @@ class MainPage extends StatelessWidget {
                   },
                 )),
 
+            // 📝 Hàng ngày
             Obx(() => ListTile(
                   leading: const Icon(Icons.notes_sharp),
                   title: const Text('Hàng ngày'),
@@ -96,6 +152,7 @@ class MainPage extends StatelessWidget {
                     Navigator.pop(context);
                   },
                 )),
+            // 💊 Uống thuốc
             Obx(() => ListTile(
                   leading: const Icon(Icons.medication),
                   title: const Text('Uống thuốc'),
@@ -105,10 +162,19 @@ class MainPage extends StatelessWidget {
                     Navigator.pop(context);
                   },
                 )),
+            Obx(() => ListTile(
+                  leading: const Icon(Icons.account_box_sharp),
+                  title: const Text('Tài khoản'),
+                  selected: controller.selectedIndex.value == 8,
+                  onTap: () {
+                    controller.updateIndex(8);
+                    Navigator.pop(context);
+                  },
+                )),
 
             const Divider(),
 
-            // 🚪 Đăng xuất (nếu muốn thêm)
+            // 🚪 Đăng xuất
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
               title: const Text(
@@ -116,8 +182,9 @@ class MainPage extends StatelessWidget {
                 style: TextStyle(color: Colors.redAccent),
               ),
               onTap: () {
-                // TODO: xử lý logout
-                Navigator.pop(context);
+                // 💡 Gọi hàm logout từ Controller
+                controller.logout();
+                // Không cần Navigator.pop(context) vì Get.offAll sẽ tự động chuyển trang
               },
             ),
           ],

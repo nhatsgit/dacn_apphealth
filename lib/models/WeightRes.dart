@@ -1,4 +1,4 @@
-import 'package:dacn_app/models/Weight,dart';
+import 'package:dacn_app/models/Weight.dart';
 
 class PagedWeightResponse {
   final int pageNumber;
