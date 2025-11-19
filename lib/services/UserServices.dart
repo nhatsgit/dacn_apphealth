@@ -97,4 +97,32 @@ class UserService {
       throw Exception("Failed to load overview");
     }
   }
+
+  Future<void> updateProfile({
+    required String fullName,
+    String? gender,
+    String? dateOfBirth,
+    double? height,
+  }) async {
+    final body = {
+      "fullName": fullName,
+      "gender": gender,
+      "dateOfBirth": dateOfBirth,
+      "height": height,
+      // Lưu ý: LatestWeight KHÔNG được gửi lên vì nó là record riêng
+    };
+
+    // Loại bỏ các giá trị null khỏi body trước khi gửi (tùy chọn)
+    final Map<String, dynamic> filteredBody = body.entries
+        .where((e) => e.value != null)
+        .fold({}, (map, e) => map..[e.key] = e.value);
+
+    final response = await _request.put("user/profile", filteredBody);
+
+    if (response.statusCode != 200) {
+      // API C# trả về 200 Ok, nếu không phải 200 thì là lỗi
+      throw Exception("Failed to update user profile: ${response.body}");
+    }
+    // Nếu thành công (statusCode 200), không cần trả về gì.
+  }
 }

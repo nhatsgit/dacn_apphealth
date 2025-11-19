@@ -1,3 +1,5 @@
+// File: lib/models/Weight.dart
+
 class WeightRecord {
   final int id;
   final String date;
@@ -16,13 +18,15 @@ class WeightRecord {
   });
 
   factory WeightRecord.fromJson(Map<String, dynamic> json) {
+    // 💡 ĐÃ SỬA: Dùng (json['key'] as num?)?.toDouble() ?? 0.0
+    // để chuyển đổi an toàn từ num (có thể là null) sang double.
     return WeightRecord(
-      id: json['id'],
-      date: json['date'],
-      weight: (json['weight'] as num).toDouble(),
-      bmi: (json['bmi'] as num).toDouble(),
-      idealWeight: (json['idealWeight'] as num).toDouble(),
-      note: json['note'],
+      id: json['id'] as int,
+      date: json['date'] as String,
+      weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
+      bmi: (json['bmi'] as num?)?.toDouble() ?? 0.0,
+      idealWeight: (json['idealWeight'] as num?)?.toDouble() ?? 0.0,
+      note: json['note'] as String?,
     );
   }
 

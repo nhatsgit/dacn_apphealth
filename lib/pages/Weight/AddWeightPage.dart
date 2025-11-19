@@ -1,166 +1,147 @@
+import 'package:dacn_app/controller/AddWeightController.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
-class AddWeightPage extends StatefulWidget {
-  final double? lastWeight; // ✅ Truyền cân nặng trước đó từ lịch sử
+// Đảm bảo import controller của bạn
+// import 'package:dacn_app/controllers/AddWeightController.dart';
 
-  const AddWeightPage({super.key, this.lastWeight});
+// Dùng StatelessWidget và Get.put
+class AddWeightPage extends StatelessWidget {
+  // Khởi tạo Controller
+  final AddWeightController controller = Get.put(AddWeightController());
 
-  @override
-  State<AddWeightPage> createState() => _AddWeightPageState();
-}
-
-class _AddWeightPageState extends State<AddWeightPage> {
-  final TextEditingController newWeightController = TextEditingController();
-  final TextEditingController noteController = TextEditingController();
-
-  String unit = 'kg';
-  DateTime selectedDate = DateTime.now();
-  TimeOfDay selectedTime = TimeOfDay.now();
-
-  Future<void> _pickDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) {
-      setState(() => selectedDate = picked);
-    }
-  }
-
-  Future<void> _pickTime() async {
-    final TimeOfDay? picked =
-        await showTimePicker(context: context, initialTime: selectedTime);
-    if (picked != null) {
-      setState(() => selectedTime = picked);
-    }
-  }
+  AddWeightPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final previousWeight = widget.lastWeight?.toStringAsFixed(1) ?? '--';
-
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text("Add Weight Record"),
+        title: const Text("Thêm Hồ Sơ Cân Nặng"),
         backgroundColor: const Color(0xFF4CAF50),
+        foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- New weight (editable) ---
-            _WeightInputCard(
-              label: 'New weight',
-              controller: newWeightController,
-              unit: unit,
-              onUnitChanged: (val) => setState(() => unit = val!),
-            ),
-
-            // --- Previous weight (readonly) ---
-            _ReadOnlyWeightCard(
-              label: 'Previous weight',
-              value: previousWeight,
-              unit: unit,
-            ),
-
-            const SizedBox(height: 10),
-
-            // --- Date & Time row ---
-            Row(
-              children: [
-                Expanded(
-                  child: _DateTimeCard(
-                    icon: Icons.calendar_today,
-                    text:
-                        "${selectedDate.day}-${selectedDate.month}-${selectedDate.year}",
-                    onTap: _pickDate,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _DateTimeCard(
-                    icon: Icons.access_time,
-                    text:
-                        "${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}",
-                    onTap: _pickTime,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            // --- BMI info cards ---
-            Row(
-              children: const [
-                Expanded(
-                  child: _InfoBox(
-                    title: "BMI",
-                    content: "19,6\nBody fat (%): 15,1\nMuscle: 47,5 kg",
-                  ),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: _InfoBox(
-                    title: "Ideal weight",
-                    content:
-                        "72,3 kg\n% of Change: 0,2 %\nVariation from goal: Goal not set",
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            // --- Notes ---
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Padding(
+      body: Obx(
+        () => controller.isLoading.value &&
+                controller.previousWeight.value == 0.0
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
                 padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Notes"),
-                    const SizedBox(height: 4),
-                    TextField(
-                      controller: noteController,
-                      decoration: const InputDecoration(
-                        hintText: "Notes",
-                        border: InputBorder.none,
-                      ),
-                      maxLines: 3,
+                    // --- 1. Cân nặng mới (editable) ---
+                    _WeightInputCard(
+                      label: 'Cân nặng mới',
+                      controller: controller.newWeightController,
+                      unit: controller.unit.value,
+                      onUnitChanged: controller.updateUnit,
                     ),
+
+                    // --- 2. Cân nặng trước (readonly) ---
+                    // Hiển thị giá trị từ Controller
+                    _ReadOnlyWeightCard(
+                      label: 'Cân nặng trước',
+                      value: controller.previousWeight.value.toStringAsFixed(1),
+                      unit: controller.unit.value,
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // --- 3. Date & Time row ---
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _DateTimeCard(
+                            icon: Icons.calendar_today,
+                            text: DateFormat('dd-MM-yyyy')
+                                .format(controller.selectedDate.value),
+                            onTap: () => controller.pickDate(context),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _DateTimeCard(
+                            icon: Icons.access_time,
+                            // Định dạng giờ:phút, thêm Obx để cập nhật
+                            text:
+                                "${controller.selectedTime.value.hour.toString().padLeft(2, '0')}:${controller.selectedTime.value.minute.toString().padLeft(2, '0')}",
+                            onTap: () => controller.pickTime(context),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // --- 4. Notes ---
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("Ghi chú",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black54)),
+                            const SizedBox(height: 4),
+                            TextField(
+                              controller: controller.noteController,
+                              decoration: const InputDecoration(
+                                hintText: "Nhập ghi chú (tùy chọn)",
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              maxLines: 3,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 70),
                   ],
                 ),
               ),
-            ),
+      ),
 
-            const SizedBox(height: 70),
-          ],
+      // ✅ Nút Lưu (floating bottom)
+      floatingActionButton: Obx(
+        () => FloatingActionButton.extended(
+          backgroundColor: const Color(0xFF4CAF50),
+          // Vô hiệu hóa nút khi đang loading
+          onPressed:
+              controller.isLoading.value ? null : controller.saveWeightRecord,
+          label: controller.isLoading.value
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2),
+                )
+              : const Text('Lưu Hồ Sơ',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+          icon: controller.isLoading.value
+              ? null
+              : const Icon(Icons.check, color: Colors.white),
         ),
       ),
-
-      // ✅ Save button (floating bottom)
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF4CAF50),
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Weight record saved ✅')),
-          );
-        },
-        child: const Icon(Icons.check, color: Colors.white),
-      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
 
-// --- Editable weight card ---
+// =======================================================
+//                   REUSABLE WIDGETS
+// =======================================================
+
 class _WeightInputCard extends StatelessWidget {
   final String label;
   final TextEditingController controller;
@@ -183,7 +164,7 @@ class _WeightInputCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           children: [
-            const Icon(Icons.monitor_weight_outlined, color: Colors.grey),
+            const Icon(Icons.monitor_weight_outlined, color: Color(0xFF4CAF50)),
             const SizedBox(width: 10),
             Expanded(
               child: TextField(
@@ -193,7 +174,10 @@ class _WeightInputCard extends StatelessWidget {
                 decoration: InputDecoration(
                   labelText: label,
                   border: InputBorder.none,
+                  labelStyle: const TextStyle(color: Colors.black54),
                 ),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(width: 10),
@@ -213,7 +197,6 @@ class _WeightInputCard extends StatelessWidget {
   }
 }
 
-// --- Readonly weight card ---
 class _ReadOnlyWeightCard extends StatelessWidget {
   final String label;
   final String value;
@@ -227,9 +210,13 @@ class _ReadOnlyWeightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Hiển thị '--' nếu giá trị là 0.0 hoặc null
+    final displayValue = value == '0.0' ? '--' : value;
+
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       margin: const EdgeInsets.symmetric(vertical: 6),
+      color: Colors.grey[200], // Thẻ chỉ đọc
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Row(
@@ -237,9 +224,21 @@ class _ReadOnlyWeightCard extends StatelessWidget {
             const Icon(Icons.history, color: Colors.grey),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                "$value",
-                style: const TextStyle(fontSize: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  Text(
+                    displayValue,
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54),
+                  ),
+                ],
               ),
             ),
             Text(
@@ -252,8 +251,6 @@ class _ReadOnlyWeightCard extends StatelessWidget {
     );
   }
 }
-
-// --- Date/time & info boxes ---
 
 class _DateTimeCard extends StatelessWidget {
   final IconData icon;
@@ -278,42 +275,11 @@ class _DateTimeCard extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 20, color: Colors.grey[700]),
+              Icon(icon, size: 20, color: const Color(0xFF4CAF50)),
               const SizedBox(width: 8),
               Text(text, style: const TextStyle(fontSize: 16)),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoBox extends StatelessWidget {
-  final String title;
-  final String content;
-
-  const _InfoBox({required this.title, required this.content});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0.5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style:
-                    const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            Text(
-              content,
-              style: TextStyle(color: Colors.grey[700], fontSize: 13),
-            ),
-          ],
         ),
       ),
     );

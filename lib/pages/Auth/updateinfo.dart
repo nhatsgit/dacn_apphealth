@@ -1,21 +1,21 @@
-import 'package:dacn_app/controller/RegisterController.dart';
-import 'package:dacn_app/controller/UpdateUserController.dart';
-import 'package:dacn_app/pages/Auth/login.dart';
+// File: lib/pages/Auth/UpdateInfoPage.dart (hoặc đường dẫn thích hợp)
+
+import 'package:dacn_app/controller/UpdateInfoController.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
 class UpdateInfoPage extends StatelessWidget {
-  final UpdateUserController controller = Get.put(UpdateUserController());
-
-  UpdateInfoPage({super.key});
+  const UpdateInfoPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Khởi tạo Controller
+    final controller = Get.put(UpdateInfoController());
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Thông tin người dùng',
+          'Tài Khoản',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
@@ -23,159 +23,152 @@ class UpdateInfoPage extends StatelessWidget {
           onPressed: () => Scaffold.of(context).openDrawer(),
         ),
         backgroundColor: Colors.green,
-        actions: const [],
+        actions: const [
+          Icon(Icons.edit),
+          SizedBox(width: 10),
+          Icon(Icons.share),
+          SizedBox(width: 10),
+          Icon(Icons.local_drink_outlined),
+          SizedBox(width: 10),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF4CAF50)));
+        }
+
+        final profile = controller.userProfile.value;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 📧 Nhập Email
-              Obx(() => TextField(
-                    onChanged: (value) => controller.email.value = value,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      errorText: controller.emailError.value.isEmpty
-                          ? null
-                          : controller.emailError.value,
-                    ),
-                  )),
-
-              const SizedBox(height: 16),
-
-              // 🔒 Nhập Password
-              Obx(() => TextField(
-                    onChanged: (value) => controller.password.value = value,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Mật khẩu',
-                      errorText: controller.passwordError.value.isEmpty
-                          ? null
-                          : controller.passwordError.value,
-                    ),
-                  )),
-
-              const SizedBox(height: 16),
-
-              // 👤 Họ tên
-              TextField(
-                onChanged: (value) => controller.fullName.value = value,
-                decoration: const InputDecoration(labelText: 'Họ và tên'),
+              // Tên đầy đủ
+              _buildTextField(
+                controller: controller.fullNameController,
+                label: 'Tên đầy đủ',
+                icon: Icons.person,
               ),
-
               const SizedBox(height: 16),
 
-              // 🎂 Ngày sinh (định dạng dd-MM-yyyy)
-              Obx(() {
-                // Format hiển thị dd-MM-yyyy nếu có giá trị
-                String displayDate = '';
-                if (controller.dateOfBirth.value.isNotEmpty) {
-                  try {
-                    DateTime parsed =
-                        DateTime.parse(controller.dateOfBirth.value);
-                    displayDate = DateFormat('dd-MM-yyyy').format(parsed);
-                  } catch (_) {}
-                }
+              // Giới tính (Sử dụng Dropdown cho UX tốt hơn)
+              _buildGenderDropdown(controller),
+              const SizedBox(height: 16),
 
-                return TextField(
-                  readOnly: true,
-                  controller: TextEditingController(text: displayDate),
-                  decoration: const InputDecoration(
-                    labelText: 'Ngày sinh',
-                    border: OutlineInputBorder(),
+              // Ngày sinh
+              _buildTextField(
+                controller: controller.dateOfBirthController,
+                label: 'Ngày sinh (YYYY-MM-DD)',
+                icon: Icons.calendar_today,
+                readOnly:
+                    true, // Không cho sửa trực tiếp, dùng Date Picker nếu cần
+                onTap: () async {
+                  // TODO: Triển khai DatePicker nếu cần cho việc cập nhật ngày sinh
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Chiều cao
+              _buildTextField(
+                controller: controller.heightController,
+                label: 'Chiều cao (cm)',
+                icon: Icons.height,
+                keyboardType: TextInputType.number,
+                suffixText: 'cm',
+              ),
+              const SizedBox(height: 16),
+
+              // Cân nặng gần nhất
+              _buildTextField(
+                controller: controller.latestWeightController,
+                label: 'Cân nặng gần nhất (kg)',
+                icon: Icons.monitor_weight_outlined,
+                keyboardType: TextInputType.number,
+                suffixText: 'kg',
+              ),
+              const SizedBox(height: 16),
+
+              // BMI (Chỉ hiển thị)
+              Text(
+                'Chỉ số BMI: ${profile?.bmi?.toStringAsFixed(2) ?? 'N/A'}',
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 32),
+
+              // Nút Cập nhật
+              ElevatedButton(
+                onPressed: controller.updateProfile,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4CAF50),
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  onTap: () async {
-                    final pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (pickedDate != null) {
-                      // Lưu theo dạng ISO để gửi API
-                      controller.dateOfBirth.value =
-                          pickedDate.toIso8601String();
-                    }
-                  },
-                );
-              }),
-
-              const SizedBox(height: 16),
-
-              // 🚻 Chọn giới tính
-              Obx(() => DropdownButtonFormField<String>(
-                    value: controller.gender.value.isEmpty
-                        ? null
-                        : controller.gender.value,
-                    items: const [
-                      DropdownMenuItem(value: 'Nam', child: Text('Nam')),
-                      DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
-                      DropdownMenuItem(value: 'Khác', child: Text('Khác')),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) controller.gender.value = value;
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Giới tính',
-                      border: OutlineInputBorder(),
-                    ),
-                  )),
-
-              const SizedBox(height: 16),
-
-              // 📏 Nhập chiều cao (cm)
-              Obx(() => TextField(
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    onChanged: (value) {
-                      if (value.isNotEmpty) {
-                        final heightValue = double.tryParse(value);
-                        if (heightValue != null && heightValue > 0) {
-                          controller.height.value = heightValue;
-                        }
-                      }
-                    },
-                    decoration: InputDecoration(
-                      labelText: 'Chiều cao (cm)',
-                      hintText: 'Nhập chiều cao của bạn (ví dụ: 170)',
-                      border: const OutlineInputBorder(),
-                      errorText: controller.height.value <= 0
-                          ? 'Chiều cao phải lớn hơn 0'
-                          : null,
-                    ),
-                  )),
-
-              const SizedBox(height: 24),
-
-              // 🧾 Nút đăng ký
-              Center(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: controller.register,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.zero,
-                          ),
-                        ),
-                        child: const Text(
-                          "Cập nhật",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
+                child: const Text('Cập Nhật Thông Tin',
+                    style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ],
           ),
+        );
+      }),
+    );
+  }
+
+  // Widget Helper cho TextFormField
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
+    String? suffixText,
+    VoidCallback? onTap,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      readOnly: readOnly,
+      onTap: onTap,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: const Color(0xFF4CAF50)),
+        suffixText: suffixText,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 2),
+          borderRadius: BorderRadius.circular(8),
         ),
       ),
     );
+  }
+
+  // Widget Helper cho Dropdown Giới tính
+  Widget _buildGenderDropdown(UpdateInfoController controller) {
+    return Obx(() => DropdownButtonFormField<String>(
+          value: controller.selectedGender.value,
+          decoration: InputDecoration(
+            labelText: 'Giới tính',
+            prefixIcon:
+                const Icon(Icons.person_outline, color: Color(0xFF4CAF50)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          items: controller.genders
+              .map((gender) => DropdownMenuItem(
+                    value: gender,
+                    child: Text(gender),
+                  ))
+              .toList(),
+          onChanged: (newValue) {
+            controller.selectedGender.value = newValue;
+          },
+        ));
   }
 }
