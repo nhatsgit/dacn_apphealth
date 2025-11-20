@@ -1,7 +1,9 @@
 import 'package:dacn_app/pages/Auth/login.dart';
 import 'package:dacn_app/pages/Auth/updateinfo.dart';
 import 'package:dacn_app/pages/Diary/DiaryPage.dart';
-import 'package:dacn_app/pages/Meal/MealPage.dart';
+import 'package:dacn_app/pages/Meal/AddMealRecordPage.dart';
+import 'package:dacn_app/pages/Meal/FoodPage.dart';
+import 'package:dacn_app/pages/Meal/MealRecordPage.dart';
 import 'package:dacn_app/pages/Medication/MedicationPage.dart';
 import 'package:dacn_app/pages/Overview/OverviewPage.dart';
 import 'package:dacn_app/pages/Sleep/SleepPage.dart';
@@ -25,6 +27,7 @@ class MainPageController extends GetxController {
 
   final List<Widget?> pages = [
     OverviewPage(),
+    null,
     null,
     null,
     null,
@@ -102,7 +105,10 @@ class MainPageController extends GetxController {
         return WorkoutPage();
       case 7:
         // Thay thế ListFoodPage (không có import) bằng MealPage (có import)
-        return ListFoodPage();
+        return FoodPage();
+      case 9:
+        // Thay thế ListFoodPage (không có import) bằng MealPage (có import)
+        return AddMealRecordPage();
       case 8:
         // Thay thế ListFoodPage (không có import) bằng MealPage (có import)
         return UpdateInfoPage();

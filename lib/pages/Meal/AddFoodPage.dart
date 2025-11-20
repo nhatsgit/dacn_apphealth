@@ -1,104 +1,106 @@
+import 'package:dacn_app/controller/AddFoodController.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:get/get.dart';
 
-class AddFoodPage extends StatefulWidget {
+class AddFoodPage extends StatelessWidget {
+  // 💡 Tạo Constructor để có thể nhận Food object nếu muốn dùng cho chỉnh sửa
+  // final Food? foodToEdit;
   const AddFoodPage({super.key});
 
   @override
-  State<AddFoodPage> createState() => _AddFoodPageState();
-}
-
-class _AddFoodPageState extends State<AddFoodPage> {
-  final _foodNameController = TextEditingController();
-  final _brandNameController = TextEditingController();
-  final _caloriesController = TextEditingController();
-  final _fatController = TextEditingController();
-  final _carbsController = TextEditingController();
-  final _proteinController = TextEditingController();
-  final _servingsController = TextEditingController(text: "1");
-  final _servingSizeController = TextEditingController(text: "Servings");
-  final _notesController = TextEditingController();
-
-  String _selectedMeal = "Breakfast";
-  final List<String> _mealTypes = [
-    "Breakfast",
-    "Lunch",
-    "Dinner",
-    "Snack",
-  ];
-
-  DateTime selectedDate = DateTime.now();
-  TimeOfDay selectedTime = TimeOfDay.now();
-
-  Future<void> _pickDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) setState(() => selectedDate = picked);
-  }
-
-  Future<void> _pickTime() async {
-    final TimeOfDay? picked =
-        await showTimePicker(context: context, initialTime: selectedTime);
-    if (picked != null) setState(() => selectedTime = picked);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd-MM-yyyy');
-    final formattedDate = dateFormat.format(selectedDate);
-    final formattedTime = selectedTime.format(context);
+    // 💡 Khởi tạo Controller
+    final controller = Get.put(AddFoodController());
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: const Color(0xFF4CAF50),
         title: const Text(
-          'Create Food',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          'Thêm món ăn mới',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF4CAF50),
-        onPressed: () {
-          // TODO: handle save
-        },
-        child: const Icon(Icons.check, size: 30),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: ListView(
+
+      // --- Nút LƯU ---
+      bottomNavigationBar: Obx(() => Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CAF50),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: controller.isSaving.value
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.save, color: Colors.white),
+              label: Text(
+                  controller.isSaving.value ? "Đang lưu..." : "Lưu món ăn",
+                  style: const TextStyle(color: Colors.white, fontSize: 16)),
+              onPressed: controller.isSaving.value ? null : controller.saveFood,
+            ),
+          )),
+
+      // --- BODY ---
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- Card 1: Food Info ---
+            // --- Tên và Barcode ---
             Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   children: [
-                    _buildInput(
-                        Icons.restaurant, "Food name", _foodNameController),
-                    const SizedBox(height: 10),
-                    _buildInput(
-                        Icons.restaurant, "Brand name", _brandNameController),
+                    _buildInput(Icons.label, "Tên món ăn (Bắt buộc)",
+                        controller.foodNameController),
+                    const Divider(height: 1, indent: 40),
+                    _buildInput(Icons.qr_code, "Mã Barcode (Tùy chọn)",
+                        controller.barcodeController),
                   ],
                 ),
               ),
             ),
+            const SizedBox(height: 20),
 
-            const SizedBox(height: 10),
+            // --- Thông tin dinh dưỡng cơ bản ---
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: [
+                    _buildInput(Icons.local_fire_department,
+                        "Calo / 100g (Bắt buộc)", controller.caloriesController,
+                        isNumeric: true),
+                    const Divider(height: 1, indent: 40),
+                    _buildInput(Icons.straighten, "Khẩu phần (Ví dụ: 100 g)",
+                        controller.servingSizeController),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
 
-            // --- Card 2: Nutrition Info ---
+            // --- Thông tin dinh dưỡng chi tiết ---
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8.0, left: 4),
+              child: Text("Macronutrients (Mỗi 100g):",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black54)),
+            ),
             Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -106,107 +108,63 @@ class _AddFoodPageState extends State<AddFoodPage> {
               child: Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Column(
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                            child: _buildSmallInput(
-                                "Calories (Kcal)", _caloriesController)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                            child:
-                                _buildSmallInput("Fat (gm)", _fatController)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                            child: _buildSmallInput(
-                                "Carbohydrates (gm)", _carbsController)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                            child: _buildSmallInput(
-                                "Protein (gm)", _proteinController)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                            child: _buildSmallInput(
-                                "Servings", _servingsController)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                            child: _buildSmallInput(
-                                "Serving size", _servingSizeController)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    DropdownButtonFormField<String>(
-                      value: _selectedMeal,
+                    Expanded(
+                        child: _buildSmallInput(
+                            "Protein (g)", controller.proteinController)),
+                    const VerticalDivider(),
+                    Expanded(
+                        child: _buildSmallInput(
+                            "Carb (g)", controller.carbsController)),
+                    const VerticalDivider(),
+                    Expanded(
+                        child: _buildSmallInput(
+                            "Fat (g)", controller.fatController)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // --- Loại món ăn (Type) ---
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Obx(() => DropdownButtonFormField<String>(
                       decoration: const InputDecoration(
-                        labelText: "Meal type",
+                        labelText: "Loại món ăn",
+                        prefixIcon:
+                            Icon(Icons.fastfood, color: Color(0xFF4CAF50)),
                         border: InputBorder.none,
                       ),
-                      items: _mealTypes
-                          .map((type) => DropdownMenuItem(
-                                value: type,
-                                child: Text(type),
-                              ))
-                          .toList(),
-                      onChanged: (val) => setState(() {
-                        _selectedMeal = val!;
-                      }),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: _pickDate,
-                            child: Row(
-                              children: [
-                                const Icon(Icons.calendar_today_outlined,
-                                    color: Colors.grey),
-                                const SizedBox(width: 10),
-                                Text(formattedDate,
-                                    style: const TextStyle(fontSize: 16)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Container(
-                          height: 30,
-                          width: 1,
-                          color: Colors.grey[300],
-                        ),
-                        Expanded(
-                          child: InkWell(
-                            onTap: _pickTime,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(formattedTime,
-                                    style: const TextStyle(fontSize: 16)),
-                                const SizedBox(width: 10),
-                                const Icon(Icons.access_time_outlined,
-                                    color: Colors.grey),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                      value: controller.selectedType.value,
+                      items: controller.foodTypes.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          controller.selectedType.value = newValue;
+                        }
+                      },
+                    )),
               ),
             ),
+            const SizedBox(height: 20),
 
-            const SizedBox(height: 10),
-
-            // --- Notes ---
+            // --- Hướng dẫn (Instructions) ---
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8.0, left: 4),
+              child: Text("Hướng dẫn/Công thức:",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black54)),
+            ),
             Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -215,22 +173,25 @@ class _AddFoodPageState extends State<AddFoodPage> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: TextField(
-                  controller: _notesController,
+                  controller: controller.instructionsController,
                   decoration: const InputDecoration(
-                    labelText: "Notes",
+                    labelText: "Nhập hướng dẫn hoặc ghi chú...",
                     border: InputBorder.none,
                   ),
                   maxLines: 3,
                 ),
               ),
             ),
+            const SizedBox(height: 50),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInput(IconData icon, String label, TextEditingController c) {
+  // --- Các Widget Con ---
+  Widget _buildInput(IconData icon, String label, TextEditingController c,
+      {bool isNumeric = false}) {
     return TextField(
       controller: c,
       decoration: InputDecoration(
@@ -238,17 +199,22 @@ class _AddFoodPageState extends State<AddFoodPage> {
         labelText: label,
         border: InputBorder.none,
       ),
+      keyboardType: isNumeric
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.text,
     );
   }
 
   Widget _buildSmallInput(String label, TextEditingController c) {
     return TextField(
       controller: c,
+      textAlign: TextAlign.center,
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: const TextStyle(fontSize: 12),
         border: InputBorder.none,
       ),
-      keyboardType: TextInputType.number,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
     );
   }
 }

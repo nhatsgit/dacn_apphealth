@@ -1,29 +1,30 @@
+// File: lib/pages/Sleep/AddSleepPage.dart (Áp dụng Controller)
+
+import 'package:dacn_app/controller/AddSleepController.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-class AddSleepPage extends StatefulWidget {
+class AddSleepPage extends StatelessWidget {
   const AddSleepPage({Key? key}) : super(key: key);
 
-  @override
-  State<AddSleepPage> createState() => _AddSleepPageState();
-}
+  // Định dạng Duration từ phút thành chuỗi "8h 0phút"
+  String formatDuration(int durationMinutes) {
+    if (durationMinutes <= 0) return 'N/A';
+    final hours = durationMinutes ~/ 60;
+    final minutes = durationMinutes % 60;
+    return '${hours}h ${minutes}phút';
+  }
 
-class _AddSleepPageState extends State<AddSleepPage> {
-  DateTime? startTime;
-  DateTime? endTime;
-  int? durationMinutes;
-  String? sleepQuality;
-  String? sleepType;
-  final TextEditingController notesController = TextEditingController();
-
-  final List<String> sleepQualities = ['Excellent', 'Good', 'Average', 'Poor'];
-  final List<String> sleepTypes = ['Night Sleep', 'Nap'];
-
-  Future<void> pickTime(bool isStart) async {
+  // Hàm chọn thời gian
+  Future<void> pickTime(
+      BuildContext context, AddSleepController controller, bool isStart) async {
     final now = DateTime.now();
     final date = await showDatePicker(
       context: context,
-      initialDate: now,
+      initialDate: isStart
+          ? controller.startTime.value ?? now
+          : controller.endTime.value ?? now,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 1),
     );
@@ -38,189 +39,159 @@ class _AddSleepPageState extends State<AddSleepPage> {
     final selectedDateTime =
         DateTime(date.year, date.month, date.day, time.hour, time.minute);
 
-    setState(() {
-      if (isStart) {
-        startTime = selectedDateTime;
-      } else {
-        endTime = selectedDateTime;
-      }
-      _calculateDuration();
-    });
-  }
-
-  void _calculateDuration() {
-    if (startTime != null && endTime != null) {
-      durationMinutes = endTime!.difference(startTime!).inMinutes;
-      if (durationMinutes! < 0) durationMinutes = 0;
+    if (isStart) {
+      controller.startTime.value = selectedDateTime;
+    } else {
+      controller.endTime.value = selectedDateTime;
     }
-  }
-
-  void _saveRecord() {
-    if (startTime == null || endTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select start and end time')),
-      );
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Sleep record saved successfully!')),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    // 💡 Khởi tạo Controller
+    final controller = Get.put(AddSleepController());
+
+    // Gán giá trị ban đầu cho notesController
+    final notesController = TextEditingController(text: controller.notes.value);
+
+    // 💡 Lắng nghe sự thay đổi của textfield và cập nhật controller
+    notesController.addListener(() {
+      controller.notes.value = notesController.text;
+    });
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Sleep Record"),
+        title: const Text("Thêm Hồ Sơ Giấc Ngủ",
+            style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.green,
-        actions: const [
-          Icon(Icons.nightlight_round_outlined),
-          SizedBox(width: 12),
-        ],
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      backgroundColor: Colors.grey[100],
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- Time cards ---
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: Offset(0, 2))
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Start Time",
-                      style: TextStyle(color: Colors.grey)),
-                  const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          startTime != null
-                              ? DateFormat('dd-MM-yyyy HH:mm')
-                                  .format(startTime!)
-                              : "Select start time",
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.access_time),
-                        onPressed: () => pickTime(true),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  const Text("End Time", style: TextStyle(color: Colors.grey)),
-                  const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          endTime != null
-                              ? DateFormat('dd-MM-yyyy HH:mm').format(endTime!)
-                              : "Select end time",
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.access_time),
-                        onPressed: () => pickTime(false),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // --- Duration + Quality + Type ---
+            // --- THỜI GIAN BẮT ĐẦU VÀ KẾT THÚC ---
             Row(
               children: [
                 Expanded(
-                  child: _infoCard(
-                    "Duration",
-                    durationMinutes != null
-                        ? "${(durationMinutes! ~/ 60)}h ${(durationMinutes! % 60)}m"
-                        : "--",
-                  ),
+                  child: Obx(() => _buildTimePicker(
+                        context,
+                        controller,
+                        isStart: true,
+                        label: "Bắt đầu",
+                        time: controller.startTime.value,
+                      )),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 16),
                 Expanded(
-                  child: DropdownButtonFormField<String>(
-                    decoration: _dropdownDecoration("Sleep Quality"),
-                    value: sleepQuality,
-                    items: sleepQualities
-                        .map((q) => DropdownMenuItem(value: q, child: Text(q)))
-                        .toList(),
-                    onChanged: (val) => setState(() => sleepQuality = val),
-                  ),
+                  child: Obx(() => _buildTimePicker(
+                        context,
+                        controller,
+                        isStart: false,
+                        label: "Kết thúc",
+                        time: controller.endTime.value,
+                      )),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    decoration: _dropdownDecoration("Sleep Type"),
-                    value: sleepType,
-                    items: sleepTypes
-                        .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                        .toList(),
-                    onChanged: (val) => setState(() => sleepType = val),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // --- Notes ---
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: Offset(0, 2))
-                ],
-              ),
-              child: TextField(
-                controller: notesController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                    labelText: "Notes", border: InputBorder.none),
-              ),
-            ),
-
             const SizedBox(height: 20),
 
-            // --- Save Button ---
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              icon: const Icon(Icons.check, color: Colors.white),
-              label: const Text("Save Sleep Record",
-                  style: TextStyle(color: Colors.white, fontSize: 16)),
-              onPressed: _saveRecord,
-            )
+            // --- THỜI LƯỢNG VÀ THÔNG TIN KHÁC ---
+            Obx(() => Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _infoCard("Thời lượng",
+                        formatDuration(controller.durationMinutes.value)),
+                  ],
+                )),
+            const SizedBox(height: 20),
+
+            // --- CHẤT LƯỢNG NGỦ VÀ LOẠI NGỦ ---
+            Row(
+              children: [
+                Expanded(
+                  child: Obx(() => _buildDropdown(
+                        label: "Chất lượng ngủ",
+                        value: controller.sleepQuality.value,
+                        items: controller.sleepQualities,
+                        onChanged: (val) => controller.sleepQuality.value = val,
+                      )),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Obx(() => _buildDropdown(
+                        label: "Loại ngủ",
+                        value: controller.sleepType.value,
+                        items: controller.sleepTypes,
+                        onChanged: (val) => controller.sleepType.value = val,
+                      )),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // --- GHI CHÚ ---
+            TextField(
+              controller: notesController,
+              maxLines: 3,
+              decoration: _inputDecoration("Ghi chú"),
+            ),
+            const SizedBox(height: 30),
+
+            // --- NÚT LƯU ---
+            Obx(() => ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: controller.isLoading.value
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : const Icon(Icons.check, color: Colors.white),
+                  label: Text(
+                      controller.isLoading.value
+                          ? "Đang lưu..."
+                          : "Lưu Hồ Sơ Giấc Ngủ",
+                      style:
+                          const TextStyle(color: Colors.white, fontSize: 16)),
+                  onPressed:
+                      controller.isLoading.value ? null : controller.saveRecord,
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- Các Widget Con ---
+
+  Widget _buildTimePicker(
+    BuildContext context,
+    AddSleepController controller, {
+    required bool isStart,
+    required String label,
+    DateTime? time,
+  }) {
+    return InkWell(
+      onTap: () => pickTime(context, controller, isStart),
+      child: InputDecorator(
+        decoration: _inputDecoration(label),
+        child: Row(
+          children: [
+            const Icon(Icons.access_time),
+            const SizedBox(width: 8),
+            Text(
+              time != null
+                  ? DateFormat('dd/MM HH:mm').format(time)
+                  : 'Chọn thời gian',
+              style: const TextStyle(fontSize: 16),
+            ),
           ],
         ),
       ),
@@ -233,7 +204,7 @@ class _AddSleepPageState extends State<AddSleepPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
         ],
       ),
@@ -249,13 +220,34 @@ class _AddSleepPageState extends State<AddSleepPage> {
     );
   }
 
-  InputDecoration _dropdownDecoration(String label) {
+  Widget _buildDropdown({
+    required String label,
+    required String? value,
+    required List<String> items,
+    required void Function(String?) onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: _inputDecoration(label),
+      items: items.map((String item) {
+        return DropdownMenuItem<String>(
+          value: item,
+          child: Text(item),
+        );
+      }).toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
       filled: true,
       fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
     );
   }
 }

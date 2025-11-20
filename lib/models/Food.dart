@@ -1,40 +1,45 @@
+// File: lib/models/Food.dart
+
+import 'dart:convert';
+
 class Food {
   final int id;
   final String name;
-  final String barcode;
-  final double calories;
-  final double protein;
-  final double carbs;
-  final double fat;
-  final String servingSize;
-  final String type;
-  final String instructions;
+  final String? barcode;
+  final double calories; // Calo / ServingSize
+  final double? protein;
+  final double? carbs;
+  final double? fat;
+  final String? servingSize;
+  final String? type;
+  final String? instructions;
 
   Food({
     required this.id,
     required this.name,
-    required this.barcode,
+    this.barcode,
     required this.calories,
-    required this.protein,
-    required this.carbs,
-    required this.fat,
-    required this.servingSize,
-    required this.type,
-    required this.instructions,
+    this.protein,
+    this.carbs,
+    this.fat,
+    this.servingSize,
+    this.type,
+    this.instructions,
   });
 
   factory Food.fromJson(Map<String, dynamic> json) {
     return Food(
-      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
-      name: json['name'] ?? '',
-      barcode: json['barcode'] ?? '',
+      id: json['id'] as int,
+      name: json['name'] as String,
+      barcode: json['barcode'] as String?,
+      // Chuyển đổi an toàn từ num sang double
       calories: (json['calories'] as num?)?.toDouble() ?? 0.0,
-      protein: (json['protein'] as num?)?.toDouble() ?? 0.0,
-      carbs: (json['carbs'] as num?)?.toDouble() ?? 0.0,
-      fat: (json['fat'] as num?)?.toDouble() ?? 0.0,
-      servingSize: json['servingSize'] ?? '',
-      type: json['type'] ?? '',
-      instructions: json['instructions'] ?? '',
+      protein: (json['protein'] as num?)?.toDouble(),
+      carbs: (json['carbs'] as num?)?.toDouble(),
+      fat: (json['fat'] as num?)?.toDouble(),
+      servingSize: json['servingSize'] as String?,
+      type: json['type'] as String?,
+      instructions: json['instructions'] as String?,
     );
   }
 
@@ -52,35 +57,43 @@ class Food {
       'instructions': instructions,
     };
   }
+}
 
-  Food copyWith({
-    int? id,
-    String? name,
-    String? barcode,
-    double? calories,
-    double? protein,
-    double? carbs,
-    double? fat,
-    String? servingSize,
-    String? type,
-    String? instructions,
-  }) {
-    return Food(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      barcode: barcode ?? this.barcode,
-      calories: calories ?? this.calories,
-      protein: protein ?? this.protein,
-      carbs: carbs ?? this.carbs,
-      fat: fat ?? this.fat,
-      servingSize: servingSize ?? this.servingSize,
-      type: type ?? this.type,
-      instructions: instructions ?? this.instructions,
-    );
-  }
+// DTO dùng cho việc tạo (POST) hoặc cập nhật (PUT) Food
+class CreateFoodDto {
+  final String name;
+  final String? barcode;
+  final double calories;
+  final double? protein;
+  final double? carbs;
+  final double? fat;
+  final String? servingSize;
+  final String? type;
+  final String? instructions;
 
-  @override
-  String toString() {
-    return 'Food(id: $id, name: $name, calories: $calories kcal)';
+  CreateFoodDto({
+    required this.name,
+    this.barcode,
+    required this.calories,
+    this.protein,
+    this.carbs,
+    this.fat,
+    this.servingSize,
+    this.type,
+    this.instructions,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'barcode': barcode,
+      'calories': calories,
+      'protein': protein,
+      'carbs': carbs,
+      'fat': fat,
+      'servingSize': servingSize,
+      'type': type,
+      'instructions': instructions,
+    };
   }
 }

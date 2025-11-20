@@ -122,7 +122,7 @@ class WaterController extends GetxController with StateMixin<WaterRecord> {
       Get.snackbar(
         "Thành công",
         "Đã thêm ${amountLiter.toStringAsFixed(2)} Lít nước!",
-        snackPosition: SnackPosition.TOP,
+        snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green,
         colorText: Colors.white,
       );

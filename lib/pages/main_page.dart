@@ -133,11 +133,20 @@ class MainPage extends StatelessWidget {
                 )),
             // 🍽️ Bữa Ăn
             Obx(() => ListTile(
-                  leading: const Icon(Icons.local_dining),
-                  title: const Text('Bữa Ăn'),
+                  leading: const Icon(Icons.food_bank_outlined),
+                  title: const Text('Danh sách món ăn'),
                   selected: controller.selectedIndex.value == 7,
                   onTap: () {
                     controller.updateIndex(7);
+                    Navigator.pop(context);
+                  },
+                )),
+            Obx(() => ListTile(
+                  leading: const Icon(Icons.dining_sharp),
+                  title: const Text('Bữa Ăn'),
+                  selected: controller.selectedIndex.value == 9,
+                  onTap: () {
+                    controller.updateIndex(9);
                     Navigator.pop(context);
                   },
                 )),
