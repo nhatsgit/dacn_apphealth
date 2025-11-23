@@ -1,41 +1,33 @@
-import 'package:dacn_app/controller/FoodController.dart';
+// File: lib/controller/AddMealRecordController.dart
+
 import 'package:dacn_app/controller/MealController.dart';
-// Cần để lấy danh sách Food
-import 'package:dacn_app/models/Food.dart'; // Giả sử có model Food và FoodDto
+import 'package:dacn_app/models/Food.dart'; // Import model Food
 import 'package:dacn_app/models/Meal.dart';
 import 'package:dacn_app/services/HttpRequest.dart';
 import 'package:dacn_app/services/MealServices.dart';
+import 'package:dacn_app/services/FoodService.dart'; // Import FoodService
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 
 class AddMealRecordController extends GetxController {
-  // Trạng thái Loading và Lưu
-  var isSaving = false.obs;
-
-  // Dữ liệu cho Edit
+  // Dữ liệu ban đầu
   final MealRecord? mealToEdit;
   final DateTime initialDate;
-  var isEditing = false.obs;
 
-  // Các trường nhập liệu cơ bản
-  var selectedMealType = 'Breakfast'.obs;
-  final TextEditingController noteController = TextEditingController();
+  AddMealRecordController({this.mealToEdit, required this.initialDate});
 
-  // Danh sách các món ăn trong bữa ăn
-  var mealItems = <MealItem>[].obs;
-
-  // Thống kê calo (tính toán)
+  // Trạng thái reactive
+  var isLoading = false.obs;
+  var isFoodLoading = false.obs; // NEW: Trạng thái tải Food
+  var selectedDate = DateTime.now().obs;
+  var selectedMealType = 'Breakfast'.obs; // Giá trị mặc định
+  var mealItems = <CreateMealItemDto>[].obs;
+  var foodList = <Food>[].obs; // NEW: Danh sách thực phẩm
+  var noteController = TextEditingController();
   var totalCalories = 0.0.obs;
 
-  // Dịch vụ và Controller liên quan
-  late final MealService _mealService;
-  final MealController _mealController = Get.find<MealController>();
-  // 💡 Nếu AddMealRecordPage cho phép chọn Food từ DB, ta cần FoodController.
-  final FoodController _foodController = Get.find<FoodController>();
-
-  // Danh sách loại bữa ăn
   final List<String> mealTypes = [
     'Breakfast',
     'Lunch',
@@ -44,189 +36,188 @@ class AddMealRecordController extends GetxController {
     'Other'
   ];
 
-  AddMealRecordController({required this.initialDate, this.mealToEdit}) {
+  // Dịch vụ
+  late final MealService _mealService;
+  late final FoodService _foodService; // NEW: Dịch vụ Food
+
+  @override
+  void onInit() {
+    super.onInit();
     final client = HttpRequest(http.Client());
     _mealService = MealService(client);
+    _foodService = FoodService(client); // Khởi tạo FoodService
 
-    // Nếu là chế độ chỉnh sửa
+    // Khởi tạo trạng thái
     if (mealToEdit != null) {
-      isEditing(true);
-      selectedMealType.value = mealToEdit!.mealType;
-      noteController.text = mealToEdit!.note ?? '';
-      mealItems.assignAll(mealToEdit!.items);
+      _loadMealForEditing(mealToEdit!);
+    } else {
+      selectedDate.value = initialDate;
     }
-    _calculateTotals();
+
+    // Lắng nghe thay đổi của danh sách món ăn để cập nhật tổng calo
+    ever(mealItems, (_) => _calculateTotalCalories());
+    // Tính toán calo lần đầu
+    _calculateTotalCalories();
+  }
+
+  void _loadMealForEditing(MealRecord meal) {
+    selectedDate.value = DateFormat('yyyy-MM-dd').parse(meal.date);
+    selectedMealType.value = meal.mealType;
+    noteController.text = meal.note ?? '';
+
+    // Chuyển đổi MealItem sang CreateMealItemDto để chỉnh sửa
+    mealItems.assignAll(meal.items.map((item) => CreateMealItemDto(
+          foodId: item.foodId,
+          quantity: item.quantity,
+          unit: item.unit,
+          calories: item.calories, // Calo/unit
+          protein: item.protein,
+          carbs: item.carbs,
+          fat: item.fat,
+        )));
+  }
+
+  // Tính tổng calo từ danh sách món ăn
+  void _calculateTotalCalories() {
+    // totalCalories = sum(item.calories * item.quantity)
+    double total = mealItems.fold(
+        0.0, (sum, item) => sum + (item.calories ?? 0.0) * item.quantity);
+    totalCalories.value = total;
   }
 
   // ===============================================
-  // LOGIC ITEM (Thêm/Sửa Item trong bữa ăn)
+  // HÀM TẢI DANH SÁCH THỰC PHẨM
   // ===============================================
+  Future<void> fetchFoodList() async {
+    if (foodList.isNotEmpty && !isFoodLoading.value) return; // Tránh tải lại
 
-  // Hộp thoại Thêm/Sửa một món ăn
-  void showAddEditItemDialog({MealItem? itemToEdit, int? index}) {
-    final TextEditingController quantityController = TextEditingController(
-        text: itemToEdit?.quantity.toStringAsFixed(1) ?? '100.0');
-    var selectedFood = (itemToEdit != null)
-        ? _foodController.foodRecords
-            .firstWhereOrNull((f) => f.id == itemToEdit.foodId)
-        : null.obs;
-    final formKey = GlobalKey<FormState>();
+    try {
+      isFoodLoading(true);
+      final response = await _foodService.fetchAllFoods();
+      foodList.assignAll(response);
+    } catch (e) {
+      Get.snackbar(
+        "Lỗi tải thực phẩm",
+        "Không thể tải danh sách thực phẩm: $e",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isFoodLoading(false);
+    }
+  }
 
-    Get.defaultDialog(
-        title: itemToEdit != null ? "Chỉnh sửa món ăn" : "Thêm món ăn",
-        content: SingleChildScrollView(
-          child: Form(
-            key: formKey,
-            child: Column(
-              children: [
-                // Chọn món ăn từ DB (ComboBox)
-                // Obx(() => DropdownButtonFormField<Food>(
-                //       decoration:
-                //           const InputDecoration(labelText: "Chọn món ăn"),
-                //       value: selectedFood?.value,
-                //       items: _foodController.foodRecords.map((food) {
-                //         return DropdownMenuItem<Food>(
-                //           value: food,
-                //           child:
-                //               Text(food.name, overflow: TextOverflow.ellipsis),
-                //         );
-                //       }).toList(),
-                //       onChanged: (Food? newValue) {
-                //         selectedFood?.value = newValue;
-                //       },
-                //       validator: (value) =>
-                //           value == null ? 'Vui lòng chọn một món ăn' : null,
-                //     )),
-                const SizedBox(height: 10),
-                // Nhập số lượng
-                // TextFormField(
-                //   controller: quantityController,
-                //   keyboardType:
-                //       const TextInputType.numberWithOptions(decimal: true),
-                //   decoration: InputDecoration(
-                //     labelText:
-                //         "Số lượng (${selectedFood.value?.servingSize ?? 'g'})",
-                //   ),
-                //   validator: (value) {
-                //     if (value == null || double.tryParse(value) == null)
-                //       return 'Phải là số hợp lệ';
-                //     if (double.parse(value) <= 0)
-                //       return 'Số lượng phải lớn hơn 0';
-                //     return null;
-                //   },
-                // ),
-              ],
+  // ===============================================
+  // HÀM THÊM MÓN ĂN ĐÃ CHỌN TỪ DIALOG
+  // ===============================================
+  void addSelectedFoodItem(Food food, double quantity, String unit) {
+    // Tạo DTO mới với thông tin Food đã chọn
+    mealItems.add(CreateMealItemDto(
+      foodId: food.id,
+      quantity: quantity,
+      unit: unit,
+      name: food.name, // Tên món ăn
+      // Lưu trữ giá trị dinh dưỡng cơ bản (calo/đơn vị)
+      calories: food.calories, // Calo/ServingSize
+      protein: food.protein,
+      carbs: food.carbs,
+      fat: food.fat,
+    ));
+
+    Get.snackbar("Thành công", "Đã thêm món ${food.name} vào bữa ăn.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white);
+  }
+
+  // ===============================================
+  // HÀM CHỌN NGÀY (giữ nguyên)
+  // ===============================================
+  Future<void> pickDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate.value,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF4CAF50), // Màu xanh lá cây
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
             ),
           ),
-        ),
-        textConfirm: itemToEdit != null ? "Cập nhật" : "Thêm",
-        textCancel: "Hủy",
-        onConfirm: () {
-          // if (formKey.currentState!.validate()) {
-          //   _addUpdateItem(itemToEdit, index, selectedFood!.value!,
-          //       double.parse(quantityController.text));
-          //   Get.back();
-          // }
-        });
-  }
-
-  // Logic Thêm/Sửa Item
-  void _addUpdateItem(
-      MealItem? originalItem, int? index, Food selectedFood, double quantity) {
-    // Tính toán lại dinh dưỡng dựa trên servingSize (giả sử servingSize là 100g)
-    // Nếu servingSize không phải 100g, logic này cần phức tạp hơn.
-    // Ví dụ: Food.calories là Calo/100g
-    final double factor = quantity / 100.0;
-
-    final newItem = MealItem(
-      id: originalItem?.id ??
-          0, // Id sẽ được API cấp khi lưu/update toàn bộ MealRecord
-      foodId: selectedFood.id,
-      foodName: selectedFood.name,
-      quantity: quantity,
-      unit: selectedFood
-          .servingSize, // Tạm thời dùng ServingSize của Food làm Unit
-      calories: (selectedFood.calories * factor).toPrecision(1),
-      protein: (selectedFood.protein ?? 0.0) * factor.toPrecision(1),
-      carbs: (selectedFood.carbs ?? 0.0) * factor.toPrecision(1),
-      fat: (selectedFood.fat ?? 0.0) * factor.toPrecision(1),
+          child: child!,
+        );
+      },
     );
-
-    if (index != null) {
-      mealItems[index] = newItem; // Cập nhật
-    } else {
-      mealItems.add(newItem); // Thêm mới
+    if (picked != null && picked != selectedDate.value) {
+      selectedDate.value = picked;
     }
-
-    _calculateTotals();
   }
 
-  void removeItem(int index) {
+  void removeMealItem(int index) {
     mealItems.removeAt(index);
-    _calculateTotals();
-  }
-
-  // Tính toán lại tổng Calo mỗi khi Item thay đổi
-  void _calculateTotals() {
-    totalCalories.value =
-        mealItems.fold(0.0, (sum, item) => sum + (item.calories ?? 0.0));
   }
 
   // ===============================================
-  // LOGIC LƯU DỮ LIỆU
+  // HÀM LƯU HỒ SƠ BỮA ĂN (giữ nguyên)
   // ===============================================
   Future<void> saveMealRecord() async {
     if (mealItems.isEmpty) {
-      Get.snackbar("Lỗi", "Bữa ăn phải có ít nhất một món ăn.",
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar("Lỗi", "Bữa ăn phải có ít nhất một món.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
       return;
     }
 
-    isSaving(true);
+    isLoading(true);
 
-    // 1. Chuyển MealItem thành CreateMealItemDto
-    final List<CreateMealItemDto> itemDtos = mealItems
-        .map((item) => CreateMealItemDto(
-              foodId: item.foodId,
-              quantity: item.quantity,
-              unit: item.unit,
-              calories: item.calories,
-              protein: item.protein,
-              carbs: item.carbs,
-              fat: item.fat,
-            ))
-        .toList();
-
-    // 2. Tạo DTO tổng thể
-    final CreateMealRecordDto dto = CreateMealRecordDto(
-      date: DateFormat('yyyy-MM-dd').format(initialDate),
+    // Chuẩn bị DTO
+    final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate.value);
+    final dto = CreateMealRecordDto(
+      date: formattedDate,
       mealType: selectedMealType.value,
       note: noteController.text.isEmpty ? null : noteController.text,
-      items: itemDtos,
+      items: mealItems.toList(),
     );
-
+    Get.back();
     try {
-      if (isEditing.value && mealToEdit != null) {
+      if (mealToEdit != null) {
         // Cập nhật
         await _mealService.updateMeal(mealToEdit!.id, dto);
-        Get.snackbar("Thành công", "Đã cập nhật bữa ăn.",
-            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green);
+        Get.snackbar("Thành công", "Đã cập nhật hồ sơ bữa ăn.",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white);
       } else {
         // Tạo mới
         await _mealService.createMeal(dto);
-        Get.snackbar("Thành công", "Đã tạo hồ sơ bữa ăn mới.",
-            snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.green);
+        Get.snackbar("Thành công", "Đã thêm hồ sơ bữa ăn mới.",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green,
+            colorText: Colors.white);
       }
 
-      // 3. Tải lại danh sách trên MealController và thoát trang
-      await _mealController
-          .fetchMealsForSelectedDate(_mealController.selectedDate.value);
-      Get.back();
+      // Sau khi lưu, quay lại trang trước và yêu cầu cập nhật danh sách
+      final mealController = Get.find<MealController>();
+      await mealController.fetchMealsForSelectedDate(selectedDate.value);
     } catch (e) {
-      Get.snackbar("Lỗi lưu dữ liệu", "Không thể lưu hồ sơ bữa ăn: $e",
-          snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red);
+      Get.snackbar("Lỗi", "Không thể lưu hồ sơ bữa ăn: $e",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white);
     } finally {
-      isSaving(false);
+      isLoading(false);
     }
+  }
+
+  @override
+  void onClose() {
+    noteController.dispose();
+    super.onClose();
   }
 }

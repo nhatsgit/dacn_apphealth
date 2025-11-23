@@ -38,15 +38,17 @@ class MealService {
   // 2. POST: Tạo hồ sơ bữa ăn mới
   // POST /api/meal
   // ===============================================
-  Future<MealRecord> createMeal(CreateMealRecordDto dto) async {
+  Future<void> createMeal(CreateMealRecordDto dto) async {
     final body = dto.toJson();
 
+    // 💡 GIẢI PHÁP TỐT HƠN: Luôn bao gồm thông tin lỗi chi tiết từ server
     final response = await _request.post("meal", body);
 
+    // Kiểm tra mã trạng thái 201 (Created) hoặc 200 (OK)
     if (response.statusCode == 201 || response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return MealRecord.fromJson(data);
+      return;
     } else {
+      // Thất bại, ném ra ngoại lệ với chi tiết từ phản hồi của server
       throw Exception("Failed to create meal record: ${response.body}");
     }
   }

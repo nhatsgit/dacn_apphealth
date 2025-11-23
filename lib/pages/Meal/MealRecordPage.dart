@@ -17,25 +17,15 @@ class MealRecordPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: const Color(0xFF4CAF50),
+        backgroundColor: Colors.green,
         title: const Text(
-          'Theo Dõi Dinh Dưỡng',
+          'Theo dõi bữa ăn',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          Obx(() => IconButton(
-                icon: Icon(Icons.refresh,
-                    color: controller.isLoading.value
-                        ? Colors.grey
-                        : Colors.white),
-                onPressed: controller.isLoading.value
-                    ? null
-                    : () => controller.fetchMealsForSelectedDate(
-                        controller.selectedDate.value),
-              )),
-          const SizedBox(width: 8),
-        ],
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: Colors.white),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
       ),
 
       body: Column(
@@ -162,14 +152,14 @@ class MealRecordPage extends StatelessWidget {
       ),
 
       // --- Nút Thêm Mới ---
-      floatingActionButton: Obx(() => FloatingActionButton.extended(
-            onPressed: () => Get.to(
-                () => AddMealRecordPage(date: controller.selectedDate.value)),
-            backgroundColor: const Color(0xFF4CAF50),
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text("Thêm Bữa Ăn",
-                style: TextStyle(color: Colors.white)),
-          )),
+      // SỬA: Loại bỏ Obx không cần thiết bao quanh FloatingActionButton
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Get.to(
+            () => AddMealRecordPage(date: controller.selectedDate.value)),
+        backgroundColor: const Color(0xFF4CAF50),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text("Thêm Bữa Ăn", style: TextStyle(color: Colors.white)),
+      ),
     );
   }
 
@@ -190,6 +180,8 @@ class MealRecordPage extends StatelessWidget {
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       confirmDismiss: (direction) async {
+        // Obx ở đây là không cần thiết vì nó nằm trong async/await
+        // và chỉ dùng để gọi dialog, không trực tiếp xây dựng UI
         return await Get.defaultDialog<bool>(
           title: "Xác nhận xóa",
           middleText:

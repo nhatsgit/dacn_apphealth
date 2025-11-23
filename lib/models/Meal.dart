@@ -42,8 +42,11 @@ class MealItem {
 }
 
 // DTO dùng cho việc tạo/cập nhật Item
+// File: lib/models/CreateMealItem.dart
+
 class CreateMealItemDto {
   final int? foodId;
+  final String? name; // <--- ĐÃ THÊM TRƯỜNG NAME
   final double quantity;
   final String? unit;
   final double? calories;
@@ -53,6 +56,7 @@ class CreateMealItemDto {
 
   CreateMealItemDto({
     this.foodId,
+    this.name, // <--- ĐÃ THÊM VÀO CONSTRUCTOR
     required this.quantity,
     this.unit,
     this.calories,
@@ -64,6 +68,7 @@ class CreateMealItemDto {
   Map<String, dynamic> toJson() {
     return {
       'foodId': foodId,
+      'name': name, // <--- ĐÃ THÊM VÀO JSON
       'quantity': quantity,
       'unit': unit,
       'calories': calories,
@@ -129,7 +134,7 @@ class CreateMealRecordDto {
       'date': date,
       'mealType': mealType,
       'note': note,
-      'items': items.map((i) => i.toJson()).toList(),
+      'items': items.map((item) => item.toJson()).toList(),
     };
   }
 }

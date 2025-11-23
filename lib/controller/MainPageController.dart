@@ -108,7 +108,7 @@ class MainPageController extends GetxController {
         return FoodPage();
       case 9:
         // Thay thế ListFoodPage (không có import) bằng MealPage (có import)
-        return AddMealRecordPage();
+        return MealRecordPage();
       case 8:
         // Thay thế ListFoodPage (không có import) bằng MealPage (có import)
         return UpdateInfoPage();
