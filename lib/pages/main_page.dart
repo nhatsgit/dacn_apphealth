@@ -123,8 +123,17 @@ class MainPage extends StatelessWidget {
                 )),
             // 🏋️ Thể dục
             Obx(() => ListTile(
+                  leading: const Icon(Icons.fitness_center_outlined),
+                  title: const Text('Các bài tập'),
+                  selected: controller.selectedIndex.value == 4,
+                  onTap: () {
+                    controller.updateIndex(4);
+                    Navigator.pop(context);
+                  },
+                )),
+            Obx(() => ListTile(
                   leading: const Icon(Icons.fitness_center),
-                  title: const Text('Thể dục'),
+                  title: const Text('Kế hoạch thể dục'),
                   selected: controller.selectedIndex.value == 6,
                   onTap: () {
                     controller.updateIndex(6);
@@ -152,15 +161,7 @@ class MainPage extends StatelessWidget {
                 )),
 
             // 📝 Hàng ngày
-            Obx(() => ListTile(
-                  leading: const Icon(Icons.notes_sharp),
-                  title: const Text('Hàng ngày'),
-                  selected: controller.selectedIndex.value == 4,
-                  onTap: () {
-                    controller.updateIndex(4);
-                    Navigator.pop(context);
-                  },
-                )),
+
             // 💊 Uống thuốc
             Obx(() => ListTile(
                   leading: const Icon(Icons.medication),

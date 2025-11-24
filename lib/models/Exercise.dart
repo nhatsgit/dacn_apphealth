@@ -1,44 +1,58 @@
-// models/exercise.dart
+// File: lib/models/Exercise.dart
+
 class Exercise {
   final int id;
   final String name;
-  final String category;
-  final String description;
-  final int caloriesPerMinute;
-  final String equipment;
-  final String videoUrl;
+  final String? category;
+  final String? description;
+  final double? caloriesPerMinute;
+  final String? equipment;
+  final String? videoUrl;
 
   Exercise({
     required this.id,
     required this.name,
-    required this.category,
-    required this.description,
-    required this.caloriesPerMinute,
-    required this.equipment,
-    required this.videoUrl,
+    this.category,
+    this.description,
+    this.caloriesPerMinute,
+    this.equipment,
+    this.videoUrl,
   });
 
-  // Tạo từ Map (JSON)
   factory Exercise.fromJson(Map<String, dynamic> json) {
     return Exercise(
-      id: json['id'] is int
-          ? json['id'] as int
-          : int.parse(json['id'].toString()),
-      name: json['name'] ?? '',
-      category: json['category'] ?? '',
-      description: json['description'] ?? '',
-      caloriesPerMinute: json['caloriesPerMinute'] is int
-          ? json['caloriesPerMinute'] as int
-          : int.parse(json['caloriesPerMinute'].toString()),
-      equipment: json['equipment'] ?? '',
-      videoUrl: json['videoUrl'] ?? '',
+      id: json['id'] as int,
+      name: json['name'] as String,
+      category: json['category'] as String?,
+      description: json['description'] as String?,
+      // Chuyển đổi an toàn từ num sang double
+      caloriesPerMinute: (json['caloriesPerMinute'] as num?)?.toDouble(),
+      equipment: json['equipment'] as String?,
+      videoUrl: json['videoUrl'] as String?,
     );
   }
+}
 
-  // Chuyển sang Map (JSON)
+// DTO dùng cho việc tạo (POST) hoặc cập nhật (PUT) Exercise
+class CreateExerciseDto {
+  final String name;
+  final String? category;
+  final String? description;
+  final double caloriesPerMinute;
+  final String? equipment;
+  final String? videoUrl;
+
+  CreateExerciseDto({
+    required this.name,
+    this.category,
+    this.description,
+    required this.caloriesPerMinute,
+    this.equipment,
+    this.videoUrl,
+  });
+
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'name': name,
       'category': category,
       'description': description,
@@ -46,31 +60,5 @@ class Exercise {
       'equipment': equipment,
       'videoUrl': videoUrl,
     };
-  }
-
-  // copyWith tiện dụng
-  Exercise copyWith({
-    int? id,
-    String? name,
-    String? category,
-    String? description,
-    int? caloriesPerMinute,
-    String? equipment,
-    String? videoUrl,
-  }) {
-    return Exercise(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      category: category ?? this.category,
-      description: description ?? this.description,
-      caloriesPerMinute: caloriesPerMinute ?? this.caloriesPerMinute,
-      equipment: equipment ?? this.equipment,
-      videoUrl: videoUrl ?? this.videoUrl,
-    );
-  }
-
-  @override
-  String toString() {
-    return 'Exercise(id: $id, name: $name, category: $category)';
   }
 }

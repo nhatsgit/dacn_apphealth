@@ -9,6 +9,7 @@ import 'package:dacn_app/pages/Overview/OverviewPage.dart';
 import 'package:dacn_app/pages/Sleep/SleepPage.dart';
 import 'package:dacn_app/pages/Water/WaterPage.dart';
 import 'package:dacn_app/pages/Weight/WeightPage.dart';
+import 'package:dacn_app/pages/Workout/ExcercisePage.dart';
 import 'package:dacn_app/pages/Workout/WorkoutPage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -98,7 +99,7 @@ class MainPageController extends GetxController {
       case 3:
         return SleepPage();
       case 4:
-        return DiaryPage();
+        return ExercisePage();
       case 5:
         return MedicationPage();
       case 6:
