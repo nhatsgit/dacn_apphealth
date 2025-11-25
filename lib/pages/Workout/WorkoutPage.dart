@@ -3,6 +3,7 @@
 import 'package:dacn_app/controller/WorkoutRecordController.dart';
 import 'package:dacn_app/models/Workout.dart';
 import 'package:dacn_app/pages/Workout/AddWorkoutPage.dart';
+import 'package:dacn_app/pages/Workout/WorkoutDetailPage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -231,11 +232,11 @@ class WorkoutPage extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () {
                     Get.to(
-                      () => AddWorkoutPlanPage(workoutPlanToEdit: plan),
+                      () => WorkoutDetailPage(workoutPlanToEdit: plan),
                     )?.then((value) => controller.refreshData());
                   },
                   icon: Icon(Icons.edit, size: 18, color: color),
-                  label: Text('Sửa', style: TextStyle(color: color)),
+                  label: Text('Chi tiết', style: TextStyle(color: color)),
                 ),
                 const SizedBox(width: 8),
                 // Nút Xóa

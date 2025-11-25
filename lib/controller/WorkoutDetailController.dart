@@ -10,10 +10,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
-class AddWorkoutPlanController extends GetxController {
+class WorkoutDetailController extends GetxController {
   final WorkoutPlan? workoutPlanToEdit;
 
-  AddWorkoutPlanController({this.workoutPlanToEdit});
+  WorkoutDetailController({this.workoutPlanToEdit});
 
   // Services
   late final WorkoutService _workoutService;
@@ -21,7 +21,9 @@ class AddWorkoutPlanController extends GetxController {
 
   // Trạng thái reactive
   var isLoading = false.obs;
-  var isExerciseLoading = false.obs;
+
+  // 💡 NEW: Cache để lưu trữ Exercise đã tải từ Service
+  var _exerciseCache = <int, Exercise>{}.obs;
 
   // Dữ liệu Form
   var nameController = TextEditingController();
@@ -33,131 +35,156 @@ class AddWorkoutPlanController extends GetxController {
 
   // Danh sách các bài tập được chọn trong kế hoạch (DTO)
   var workoutExercises = <CreateWorkoutExerciseDto>[].obs;
-  // Danh sách tất cả bài tập (Library)
-  var exerciseList = <Exercise>[].obs;
 
   @override
   void onInit() {
     super.onInit();
     final client = HttpRequest(http.Client());
     _workoutService = WorkoutService(client);
-    _exerciseService = ExerciseService(client);
+    _exerciseService = ExerciseService(client); // Khởi tạo ExerciseService
 
-    // Tải danh sách Exercise Library
-    fetchExerciseList();
-
-    // Nếu là chế độ chỉnh sửa, điền dữ liệu
     if (workoutPlanToEdit != null) {
       _loadDataForEdit();
     }
   }
 
+  // ===============================================
+  // LOGIC LẤY DỮ LIỆU EXERCISE TỪ SERVICE
+  // ===============================================
+  // 💡 HÀM ĐÃ SỬA: Bị động bộ (async) và gọi service thay vì tìm trong list
+  Future<Exercise?> getExerciseById(int exerciseId) async {
+    print('Tìm Exercise với ID: $exerciseId (Async)');
+
+    // 1. Kiểm tra cache
+    if (_exerciseCache.containsKey(exerciseId)) {
+      return _exerciseCache[exerciseId];
+    }
+
+    // 2. Nếu không có trong cache, gọi API
+    try {
+      final exercise = await _exerciseService.fetchExerciseById(exerciseId);
+      // 3. Cập nhật cache
+      _exerciseCache[exerciseId] = exercise;
+      return exercise;
+    } catch (e) {
+      // API có thể trả về lỗi 404 nếu bài tập bị xóa. Trả về null
+      print('Lỗi khi tải Exercise ID $exerciseId từ API: $e');
+      return null;
+    }
+  }
+
+  // ===============================================
+  // LOGIC TẢI DỮ LIỆU KHI CHỈNH SỬA
+  // ===============================================
   void _loadDataForEdit() {
     final plan = workoutPlanToEdit!;
     nameController.text = plan.name;
     frequencyController.text = plan.frequency ?? '';
     targetStepsController.text = plan.targetSteps?.toString() ?? '';
-    // Gán dữ liệu thời gian có sẵn từ model
     preferredTimeController.text = plan.preferredTime ?? '';
     notesController.text = plan.notes ?? '';
 
-    // Chuyển đổi WorkoutExercise thành CreateWorkoutExerciseDto
-    workoutExercises.value = plan.exercises
-        .map((we) => CreateWorkoutExerciseDto(
-              exerciseId: we.exerciseId,
-              durationMinutes: we.durationMinutes,
-              sets: we.sets,
-              reps: we.reps,
-              dayOfWeek: we.dayOfWeek,
-              notes: we.notes,
-            ))
-        .toList();
-  }
+    // Chuyển đổi từ WorkoutExercise sang CreateWorkoutExerciseDto
+    final dtos = plan.exercises.map((e) => CreateWorkoutExerciseDto(
+          exerciseId: e.exerciseId,
+          durationMinutes: e.durationMinutes,
+          sets: e.sets,
+          reps: e.reps,
+          dayOfWeek: e.dayOfWeek,
+          notes: e.notes,
+        ));
+    workoutExercises.assignAll(dtos);
 
-  // Tải danh sách Exercise Library
-  Future<void> fetchExerciseList() async {
-    try {
-      isExerciseLoading(true);
-      final list = await _exerciseService.fetchAllExercises();
-      exerciseList.value = list;
-    } catch (e) {
-      Get.snackbar("Lỗi", "Không thể tải danh sách bài tập: $e",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white);
-    } finally {
-      isExerciseLoading(false);
+    // 💡 Tải trước/cache các bài tập để hiển thị nhanh hơn (Optional)
+    // Dù sao thì FutureBuilder cũng sẽ tự gọi, nhưng preload sẽ tốt hơn
+    // Bạn có thể bỏ qua bước này nếu muốn giảm tải lúc khởi tạo
+    for (var dto in dtos) {
+      getExerciseById(dto.exerciseId);
     }
   }
 
-  // Thêm một bài tập vào kế hoạch
+  // ===============================================
+  // LOGIC THÊM, SỬA, XÓA EXERCISE TRONG PLAN
+  // ===============================================
+
+  // Giả định bạn có hàm này để gọi Dialog chọn bài tập
+  void showAddExerciseDialog(BuildContext context) {
+    // Logic để hiển thị dialog chọn exercise
+    // Trong dialog này, bạn cần gọi API lấy list exercise để chọn
+    // Ví dụ: Get.to(() => SelectExercisePage());
+  }
+
   void addExerciseToPlan({
     required int exerciseId,
     int? durationMinutes,
     int? sets,
     int? reps,
-    String? dayOfWeek,
     String? notes,
   }) {
-    final dto = CreateWorkoutExerciseDto(
+    final newDto = CreateWorkoutExerciseDto(
       exerciseId: exerciseId,
       durationMinutes: durationMinutes,
       sets: sets,
       reps: reps,
-      dayOfWeek: dayOfWeek,
       notes: notes,
     );
-    workoutExercises.add(dto);
+    workoutExercises.add(newDto);
   }
 
-  // Cập nhật một bài tập trong kế hoạch (dùng index)
-  void updateExerciseInPlan(int index, CreateWorkoutExerciseDto newDto) {
-    if (index >= 0 && index < workoutExercises.length) {
-      workoutExercises[index] = newDto;
-    }
+  void updateExerciseInPlan(int index, CreateWorkoutExerciseDto dto) {
+    workoutExercises[index] = dto;
   }
 
-  // Xóa một bài tập khỏi kế hoạch
   void removeExerciseFromPlan(int index) {
     workoutExercises.removeAt(index);
   }
 
-  // Hàm lưu
+  // ===============================================
+  // LOGIC LƯU DỮ LIỆU
+  // ===============================================
   Future<void> saveWorkoutPlan() async {
     if (nameController.text.isEmpty) {
-      Get.snackbar("Cảnh báo", "Tên kế hoạch không được để trống.",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange,
-          colorText: Colors.white);
+      Get.snackbar(
+        "Lỗi",
+        "Tên kế hoạch là bắt buộc.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
 
+    // Kiểm tra xem có bài tập nào không
     if (workoutExercises.isEmpty) {
-      Get.snackbar("Cảnh báo", "Kế hoạch phải có ít nhất một bài tập.",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange,
-          colorText: Colors.white);
+      Get.snackbar(
+        "Lỗi",
+        "Kế hoạch cần có ít nhất một bài tập.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return;
     }
 
     isLoading(true);
 
     try {
-      // Chuẩn bị DTO
+      final int? targetSteps =
+          int.tryParse(targetStepsController.text.replaceAll(',', '.'));
+
       final dto = CreateWorkoutPlanDto(
         name: nameController.text,
         frequency:
             frequencyController.text.isEmpty ? null : frequencyController.text,
-        // Chuyển đổi an toàn từ String sang Int
-        targetSteps: int.tryParse(targetStepsController.text),
-        // preferredTimeController đã chứa chuỗi "HH:mm" hoặc rỗng
+        targetSteps: targetSteps,
         preferredTime: preferredTimeController.text.isEmpty
             ? null
             : preferredTimeController.text,
         notes: notesController.text.isEmpty ? null : notesController.text,
         exercises: workoutExercises.toList(),
       );
-      Get.back();
+
+      // Gọi API
       if (workoutPlanToEdit != null) {
         // Cập nhật
         await _workoutService.updateWorkoutPlan(workoutPlanToEdit!.id, dto);
@@ -174,11 +201,10 @@ class AddWorkoutPlanController extends GetxController {
             colorText: Colors.white);
       }
 
-      // Quay lại trang trước
+      Get.back(); // Quay lại trang trước
 
       // Sau khi lưu, yêu cầu cập nhật danh sách trên trang chính
-      // Lưu ý: Tên class đã được sửa thành WorkoutController nếu bạn dùng class này trên WorkoutPage
-      // Tôi dùng Get.find<WorkoutController>() theo cấu trúc đã tạo trước đó
+      // Giả định WorkoutController tồn tại
       final workoutController = Get.find<WorkoutController>();
       await workoutController.fetchWorkoutPlans();
     } catch (e) {
@@ -189,11 +215,5 @@ class AddWorkoutPlanController extends GetxController {
     } finally {
       isLoading(false);
     }
-  }
-
-  // Hàm tìm Exercise từ ID
-  Exercise? getExerciseById(int id) {
-    // Sử dụng firstWhereOrNull từ package GetX
-    return exerciseList.firstWhereOrNull((e) => e.id == id);
   }
 }
