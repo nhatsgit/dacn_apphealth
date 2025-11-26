@@ -10,13 +10,11 @@ import 'dart:async';
 class ExerciseTimerPage extends StatefulWidget {
   final Exercise exercise;
   final CreateWorkoutExerciseDto workoutExerciseDto;
-  final String planName;
 
   const ExerciseTimerPage({
     super.key,
     required this.exercise,
     required this.workoutExerciseDto,
-    required this.planName,
   });
 
   @override
@@ -26,7 +24,7 @@ class ExerciseTimerPage extends StatefulWidget {
 class _ExerciseTimerPageState extends State<ExerciseTimerPage> {
   // Trạng thái đếm giờ
   late Stopwatch _stopwatch;
-  late Timer _timer;
+  Timer? _timer; // <<--- ĐÃ SỬA: Đặt là nullable
   bool _isRunning = false;
   String _elapsedTime = '00:00:00';
   double _caloriesBurned = 0.0;
@@ -48,16 +46,17 @@ class _ExerciseTimerPageState extends State<ExerciseTimerPage> {
       ExerciseTimerController(
         exercise: widget.exercise,
         workoutExerciseDto: widget.workoutExerciseDto,
-        planName: widget.planName,
       ),
     );
   }
 
   @override
   void dispose() {
-    _timer.cancel();
     _stopwatch.stop();
-    // Không cần Get.delete() vì Controller sẽ tự động bị xóa khi trang bị pop khỏi stack (nếu dùng Get.put() trong Widget)
+    _timer?.cancel(); // <<--- ĐÃ SỬA: Dùng ?.cancel()
+
+    // Đảm bảo Controller bị xóa khi rời khỏi trang
+    Get.delete<ExerciseTimerController>();
     super.dispose();
   }
 
@@ -85,7 +84,7 @@ class _ExerciseTimerPageState extends State<ExerciseTimerPage> {
       _isRunning = false;
     });
     _stopwatch.stop();
-    _timer.cancel();
+    _timer?.cancel(); // Đảm bảo hủy an toàn ngay cả ở đây
 
     // Gửi dữ liệu đã tính toán sang Controller
     final durationMinutes = _stopwatch.elapsed.inSeconds / 60.0;
@@ -120,7 +119,7 @@ class _ExerciseTimerPageState extends State<ExerciseTimerPage> {
             onPressed: controller.isLoading.value
                 ? null
                 : () {
-                    // GỌI HÀM LƯU TỪ CONTROLLER
+                    Get.back();
                     controller.saveActivityRecord();
                   },
             child: controller.isLoading.value
@@ -153,7 +152,14 @@ class _ExerciseTimerPageState extends State<ExerciseTimerPage> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Get.back(),
+          onPressed: () {
+            // Xóa Controller thủ công (để đảm bảo reload khi vào lại)
+            Get.delete<ExerciseTimerController>();
+            // Dòng này đã dư thừa vì bạn đã xóa trong dispose(), nhưng nếu bạn muốn giữ
+            // ở đây (thủ công) thì hãy xóa nó khỏi dispose(). Tôi khuyên bạn nên giữ
+            // nó trong dispose() và bỏ đoạn này đi, nhưng nếu bạn thích cách này:
+            Get.back();
+          },
         ),
       ),
       body: SafeArea(
@@ -162,6 +168,7 @@ class _ExerciseTimerPageState extends State<ExerciseTimerPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+// ... (phần còn lại của build method) ...
               // Thông tin Kế hoạch và Bài tập
               Card(
                 elevation: 2,
@@ -170,9 +177,6 @@ class _ExerciseTimerPageState extends State<ExerciseTimerPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Kế hoạch: **${widget.planName}**",
-                          style: const TextStyle(
-                              fontSize: 14, color: Colors.blueGrey)),
                       const SizedBox(height: 5),
                       Text("Loại: ${widget.exercise.category ?? 'Tập luyện'}",
                           style: const TextStyle(

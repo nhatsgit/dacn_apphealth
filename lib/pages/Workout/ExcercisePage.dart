@@ -2,6 +2,8 @@
 
 import 'package:dacn_app/controller/ExcerciseController.dart';
 import 'package:dacn_app/models/Exercise.dart';
+import 'package:dacn_app/models/Workout.dart';
+import 'package:dacn_app/pages/Workout/AddActivityPage.dart';
 import 'package:dacn_app/pages/Workout/AddExcercisePage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -20,7 +22,7 @@ class ExercisePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: primaryColor,
+        backgroundColor: Colors.green,
         title: const Text(
           'Thư viện Bài tập',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -188,12 +190,31 @@ class ExercisePage extends StatelessWidget {
                     style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   // Nút xóa
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                    onPressed: () {
-                      _showDeleteDialog(context, exercise, controller);
-                    },
-                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.play_arrow,
+                            color: Colors.blue, size: 20),
+                        onPressed: () {
+                          Get.to(() => ExerciseTimerPage(
+                                exercise: exercise,
+                                workoutExerciseDto:
+                                    new CreateWorkoutExerciseDto(
+                                  exerciseId: exercise.id,
+                                  durationMinutes: 9999,
+                                ),
+                              ));
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete,
+                            color: Colors.red, size: 20),
+                        onPressed: () {
+                          _showDeleteDialog(context, exercise, controller);
+                        },
+                      ),
+                    ],
+                  )
                 ],
               ),
             ],

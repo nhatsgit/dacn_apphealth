@@ -1,10 +1,11 @@
 import 'package:dacn_app/controller/MainPageController.dart';
+import 'package:dacn_app/controller/OverviewController.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class MainPage extends StatelessWidget {
   final MainPageController controller = Get.put(MainPageController());
-
+  final OverviewController overviewController = Get.put(OverviewController());
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,6 +85,8 @@ class MainPage extends StatelessWidget {
                   title: const Text('Tổng Quan'),
                   selected: controller.selectedIndex.value == 0,
                   onTap: () {
+                    overviewController.selectedDate.value = DateTime.now();
+                    overviewController.fetchData(DateTime.now());
                     controller.updateIndex(0);
                     Navigator.pop(context);
                   },

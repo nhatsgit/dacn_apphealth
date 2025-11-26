@@ -13,12 +13,10 @@ import 'package:intl/intl.dart';
 class ExerciseTimerController extends GetxController {
   final Exercise exercise;
   final CreateWorkoutExerciseDto workoutExerciseDto;
-  final String planName;
 
   ExerciseTimerController({
     required this.exercise,
     required this.workoutExerciseDto,
-    required this.planName,
   });
 
   // Services

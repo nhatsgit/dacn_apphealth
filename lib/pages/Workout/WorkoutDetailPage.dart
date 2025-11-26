@@ -27,10 +27,19 @@ class WorkoutDetailPage extends StatelessWidget {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: primaryColor,
-        title: Text(
-          isEditing ? 'Chỉnh Sửa Kế Hoạch' : 'Thêm Kế Hoạch Mới',
-          style:
-              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: Hero(
+          // <--- THÊM HERO TẠI ĐÂY
+          tag: isEditing
+              ? 'plan_name_${workoutPlanToEdit!.id}'
+              : 'new_plan_title', // Cần khớp tag
+          child: Material(
+            color: Colors.transparent,
+            child: Text(
+              isEditing ? 'Chỉnh Sửa Kế Hoạch' : 'Thêm Kế Hoạch Mới',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -278,8 +287,6 @@ class WorkoutDetailPage extends StatelessWidget {
                 Get.to(() => ExerciseTimerPage(
                       exercise: exercise,
                       workoutExerciseDto: dto,
-                      planName:
-                          controller.workoutPlanToEdit?.name ?? 'Kế hoạch',
                     ));
               },
             ),

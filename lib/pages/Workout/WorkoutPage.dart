@@ -190,12 +190,20 @@ class WorkoutPage extends StatelessWidget {
                 Icon(Icons.fitness_center, color: color, size: 28),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    plan.name,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
+                  child: Hero(
+                    // <--- THÊM HERO TẠI ĐÂY
+                    tag: 'plan_name_${plan.id}', // Tag duy nhất
+                    child: Material(
+                      // Hero child phải là Material
+                      color: Colors.transparent, // Không ảnh hưởng đến màu nền
+                      child: Text(
+                        plan.name,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                      ),
                     ),
                   ),
                 ),
