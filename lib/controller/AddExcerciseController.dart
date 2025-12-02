@@ -99,6 +99,7 @@ class AddExerciseController extends GetxController {
 
       if (exerciseToEdit != null) {
         // Cập nhật
+        Get.back();
         await _exerciseService.updateExercise(exerciseToEdit!.id, dto);
 
         Get.snackbar("Thành công", "Đã cập nhật bài tập '${dto.name}'.",
@@ -107,11 +108,12 @@ class AddExerciseController extends GetxController {
             colorText: Colors.white);
       } else {
         // Tạo mới
+        Get.back();
         await _exerciseController.createExercise(dto);
       }
 
       // 4. Thành công: Quay lại trang danh sách và tải lại
-      Get.back();
+
       _exerciseController.fetchExercises();
     } catch (e) {
       // Lỗi đã được xử lý trong createExercise/updateExercise nhưng ném lại để đảm bảo trạng thái loading được reset

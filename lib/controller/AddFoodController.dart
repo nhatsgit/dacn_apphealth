@@ -58,6 +58,7 @@ class AddFoodController extends GetxController {
     isSaving(true);
 
     try {
+      Get.back();
       // 3. Tạo DTO
       final CreateFoodDto dto = CreateFoodDto(
         name: foodNameController.text,
@@ -75,12 +76,15 @@ class AddFoodController extends GetxController {
             ? instructionsController.text
             : null,
       );
+      Get.snackbar("Thành công", "Đã thêm hồ sơ món ăn mới.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white);
 
       // 4. Gọi hàm tạo từ FoodController (nó sẽ gọi Service và cập nhật danh sách)
       await _foodController.createFood(dto);
 
       // 5. Thành công: Quay lại trang danh sách
-      Get.back();
     } catch (e) {
       // Lỗi đã được FoodController.createFood xử lý và hiển thị Snackbar
     } finally {
